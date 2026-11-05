@@ -1,0 +1,650 @@
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  runApp(const JobBoardApp());
+}
+
+class Job {
+  final int id;
+  final String role;
+  final String company;
+  final String location;
+  final String type;
+  final String salary;
+  final String description;
+  final List<String> requirements;
+
+  const Job({
+    required this.id,
+    required this.role,
+    required this.company,
+    required this.location,
+    required this.type,
+    required this.salary,
+    required this.description,
+    required this.requirements,
+  });
+}
+
+const List<Job> jobs = [
+  Job(
+    id: 1,
+    role: 'Flutter Developer',
+    company: 'Google',
+    location: 'Hyderabad',
+    type: 'Full-time',
+    salary: '4-8 LPA',
+    description: 'Develop mobile applications using Flutter and Dart. '
+        'Work with a team to create responsive and user-friendly apps.',
+    requirements: ['Basic Dart knowledge', 'Flutter fundamentals',
+      'Problem solving', 'Communication skills'],
+  ),
+  Job(
+    id: 2,
+    role: 'Python Developer',
+    company: 'Infosys',
+    location: 'Bangalore',
+    type: 'Full-time',
+    salary: '3-6 LPA',
+    description: 'Build applications using Python. Work on coding, '
+        'debugging and software development tasks.',
+    requirements: ['Python basics', 'OOP concepts',
+      'Database knowledge', 'Logical thinking'],
+  ),
+  Job(
+    id: 3,
+    role: 'Web Developer',
+    company: 'TCS',
+    location: 'Chennai',
+    type: 'Internship',
+    salary: '15,000/month',
+    description: 'Create and maintain websites using modern web '
+        'technologies and responsive design.',
+    requirements: ['HTML', 'CSS', 'JavaScript', 'Teamwork'],
+  ),
+  Job(
+    id: 4,
+    role: 'Software Engineer',
+    company: 'Wipro',
+    location: 'Hyderabad',
+    type: 'Full-time',
+    salary: '4-7 LPA',
+    description: 'Participate in software development, testing '
+        'and maintenance of business applications.',
+    requirements: ['Programming basics', 'Data structures',
+      'Problem solving'],
+  ),
+  Job(
+    id: 5,
+    role: 'Data Analyst',
+    company: 'Accenture',
+    location: 'Pune',
+    type: 'Part-time',
+    salary: '20,000/month',
+    description: 'Analyze datasets, prepare reports and '
+        'support business decisions using data.',
+    requirements: ['Excel', 'SQL basics', 'Analytical skills'],
+  ),
+];
+
+class JobBoardApp extends StatelessWidget {
+  const JobBoardApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Job Board',
+      theme: ThemeData(
+        colorSchemeSeed: Colors.indigo,
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String selectedLocation = 'All';
+  String selectedType = 'All';
+  String searchText = '';
+
+  List<Job> get filteredJobs {
+    return jobs.where((job) {
+      final locationMatch = selectedLocation == 'All' ||
+          job.location == selectedLocation;
+
+      final typeMatch = selectedType == 'All' ||
+          job.type == selectedType;
+
+      final searchMatch =
+          job.role.toLowerCase().contains(searchText.toLowerCase()) ||
+          job.company.toLowerCase().contains(searchText.toLowerCase());
+
+      return locationMatch && typeMatch && searchMatch;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Job Board',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.assignment_outlined),
+            tooltip: 'My Applications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ApplicationsPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search jobs or companies',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() => searchText = value);
+                  },
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedLocation,
+                        decoration: const InputDecoration(
+                          labelText: 'Location',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          'All', 'Hyderabad', 'Bangalore',
+                          'Chennai', 'Pune'
+                        ].map((value) {
+                          return DropdownMenuItem(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => selectedLocation = value!);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedType,
+                        decoration: const InputDecoration(
+                          labelText: 'Job Type',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          'All', 'Full-time', 'Part-time', 'Internship'
+                        ].map((value) {
+                          return DropdownMenuItem(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() => selectedType = value!);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${filteredJobs.length} Jobs Available',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: filteredJobs.isEmpty
+                ? const Center(child: Text('No jobs found'))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: filteredJobs.length,
+                    itemBuilder: (context, index) {
+                      final job = filteredJobs[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 2,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(15),
+                          leading: CircleAvatar(
+                            child: Text(job.company[0]),
+                          ),
+                          title: Text(
+                            job.role,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              '${job.company}\n'
+                              '${job.location} • ${job.type}\n'
+                              'Salary: ${job.salary}',
+                            ),
+                          ),
+                          isThreeLine: true,
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => JobDetailsPage(job: job),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// JOB DETAILS SCREEN
+
+class JobDetailsPage extends StatelessWidget {
+  final Job job;
+
+  const JobDetailsPage({super.key, required this.job});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Job Details')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              job.role,
+              style: const TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              job.company,
+              style: const TextStyle(fontSize: 19),
+            ),
+            const Divider(height: 30),
+            detailRow(Icons.location_on, job.location),
+            detailRow(Icons.work, job.type),
+            detailRow(Icons.currency_rupee, job.salary),
+            const SizedBox(height: 25),
+            const Text(
+              'Job Description',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(job.description),
+            const SizedBox(height: 20),
+            const Text(
+              'Requirements',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+            ),
+            ...job.requirements.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(top: 9),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle,
+                        color: Colors.green, size: 19),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(item)),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ApplicationPage(job: job),
+                    ),
+                  );
+                },
+                child: const Text('Apply Now'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget detailRow(IconData icon, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.indigo),
+          const SizedBox(width: 12),
+          Text(value),
+        ],
+      ),
+    );
+  }
+}
+
+// APPLICATION FORM
+
+class ApplicationPage extends StatefulWidget {
+  final Job job;
+
+  const ApplicationPage({super.key, required this.job});
+
+  @override
+  State<ApplicationPage> createState() => _ApplicationPageState();
+}
+
+class _ApplicationPageState extends State<ApplicationPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
+  final resumeController = TextEditingController();
+
+  bool isSubmitting = false;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    resumeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> submitApplication() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => isSubmitting = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final applications = prefs.getStringList('applications') ?? [];
+
+      final application = {
+        'name': nameController.text.trim(),
+        'email': emailController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'resume': resumeController.text.trim(),
+        'role': widget.job.role,
+        'company': widget.job.company,
+        'location': widget.job.location,
+        'date': DateTime.now().toString(),
+      };
+
+      applications.add(jsonEncode(application));
+
+      await prefs.setStringList('applications', applications);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Application submitted successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to save application')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isSubmitting = false);
+      }
+    }
+  }
+
+  Widget buildField({
+    required String label,
+    required TextEditingController controller,
+    required String? Function(String?) validator,
+    TextInputType keyboard = TextInputType.text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboard,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Job Application')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Apply for ${widget.job.role}',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(widget.job.company),
+              const SizedBox(height: 25),
+
+              buildField(
+                label: 'Full Name',
+                controller: nameController,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
+              ),
+
+              buildField(
+                label: 'Email Address',
+                controller: emailController,
+                keyboard: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(
+                    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                  ).hasMatch(value.trim())) {
+                    return 'Enter a valid email address';
+                  }
+                  return null;
+                },
+              ),
+
+              buildField(
+                label: 'Phone Number',
+                controller: phoneController,
+                keyboard: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter phone number';
+                  }
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(value.trim())) {
+                    return 'Enter a valid 10-digit phone number';
+                  }
+                  return null;
+                },
+              ),
+
+              buildField(
+                label: 'Resume Link',
+                controller: resumeController,
+                keyboard: TextInputType.url,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your resume link';
+                  }
+                  if (!value.trim().startsWith('https://') &&
+                      !value.trim().startsWith('http://')) {
+                    return 'Enter a valid URL starting with http:// or https://';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isSubmitting ? null : submitApplication,
+                  child: isSubmitting
+                      ? const CircularProgressIndicator()
+                      : const Text(
+                          'Submit Application',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// SAVED APPLICATIONS SCREEN
+
+class ApplicationsPage extends StatefulWidget {
+  const ApplicationsPage({super.key});
+
+  @override
+  State<ApplicationsPage> createState() => _ApplicationsPageState();
+}
+
+class _ApplicationsPageState extends State<ApplicationsPage> {
+  List<Map<String, dynamic>> applications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadApplications();
+  }
+
+  Future<void> loadApplications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('applications') ?? [];
+
+    if (!mounted) return;
+
+    setState(() {
+      applications = saved.map((item) {
+        return Map<String, dynamic>.from(jsonDecode(item));
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My Applications')),
+      body: applications.isEmpty
+          ? const Center(child: Text('No applications submitted yet'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: applications.length,
+              itemBuilder: (context, index) {
+                final app = applications[index];
+
+                return Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.work),
+                    ),
+                    title: Text(app['role'] ?? ''),
+                    subtitle: Text(
+                      '${app['company']}\n'
+                      '${app['name']} • ${app['email']}',
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
